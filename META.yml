@@ -1,6 +1,6 @@
 ---
 name: Data-asXML
-version: 0.01
+version: 0.02
 author:
   - 'Jozef Kutej <jkutej@cpan.org>'
 abstract: convert data structures to/from XML
@@ -23,7 +23,7 @@ configure_requires:
 provides:
   Data::asXML:
     file: lib/Data/asXML.pm
-    version: 0.01
+    version: 0.02
 generated_by: Module::Build version 0.35
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
