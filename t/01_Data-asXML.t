@@ -3,11 +3,12 @@
 use strict;
 use warnings;
 
+use utf8;
+
 #use Test::More 'no_plan';
-use Test::More tests => 15;
+use Test::More tests => 21;
 use Test::Differences;
 use Test::Exception;
-use Encode;
 
 BEGIN {
 	use_ok ( 'Data::asXML' ) or exit;
@@ -20,8 +21,9 @@ sub main {
 	my @test_conversions = (
 		# simple
 		['123','<VALUE>123</VALUE>','numeric scalar'],
-		[decode("utf8", 'ščžťľžô'), decode("utf8", '<VALUE>ščžťľžô</VALUE>'), 'utf-8 scalar'],
-		[undef, '<VALUE/>', 'undef'],
+		['ščžťľžô', '<VALUE>ščžťľžô</VALUE>', 'utf-8 scalar'],
+		['迪拉斯', '<VALUE>迪拉斯</VALUE>', 'another utf-8 scalar'],
+		[undef, '<VALUE type="undef"/>', 'undef'],
 		['','<VALUE></VALUE>','empty string'],
 		
 		# array
@@ -90,6 +92,16 @@ sub main {
 			'</HASH>',
 			'complex nested hashes+arrays',
 		],
+		
+		# wird data
+		['|<"><">&|','<VALUE>|&lt;"&gt;&lt;"&gt;&amp;|</VALUE>','xml chars'],
+		
+		# binary
+		[
+			chr(0).chr(1).chr(2).chr(3).chr(253).chr(254).chr(255),
+			'<VALUE type="base64">AAECA/3+/w==</VALUE>',
+			'binary'
+		],
 	);
 
 	encode: {
@@ -108,9 +120,6 @@ sub main {
 		foreach my $test (@test_conversions) {
 			my $dxml = Data::asXML->new();
 			my $data = $dxml->decode($test->[1]);
-			
-		    local $TODO = 'see http://rt.cpan.org/Public/Bug/Display.html?id=51442'
-				if ($test->[2] eq 'undef');
 			
 			is_deeply(
 				$data,

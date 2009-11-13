@@ -46,14 +46,17 @@ structures to XSLT for transformations.
 use warnings;
 use strict;
 
+use utf8;
 use 5.010;
 use feature 'state';
 
 use Carp 'croak';
 use XML::LibXML 'XML_ELEMENT_NODE';
 use Scalar::Util 'blessed';
+use MIME::Base64 'encode_base64', 'decode_base64';
+use Encode 'is_utf8';
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 use base 'Class::Accessor::Fast';
 
@@ -165,8 +168,19 @@ sub encode {
         # create text node
         default {
             $where = $self->_xml->createElement('VALUE');
-            $where->addChild( $self->_xml->createTextNode( $what ) )
-                if defined $what;
+            if (defined $what) {
+                if ((not is_utf8($what, 1)) and ($what !~ m/^[[:ascii:]]*$/xms)) {
+                    $what = encode_base64($what);
+                    $what =~ s/\s*$//;
+                    $where->setAttribute('type' => 'base64');
+                }
+                $where->addChild( $self->_xml->createTextNode( $what ) )
+            }
+            else {
+                # no better way to distinguish between empty string and undef - see http://rt.cpan.org/Public/Bug/Display.html?id=51442
+                $where->setAttribute('type' => 'undef');
+            }
+                
         }
     }
     
@@ -214,8 +228,11 @@ sub decode {
             return [ map { $self->decode($_) } grep { $_->nodeType eq XML_ELEMENT_NODE } $xml->childNodes() ];
         }
         when ('VALUE') {
-            #return if not $xml->hasChildNodes();            
-            return $xml->textContent;
+            given ($xml->getAttribute('type')) {
+                when ('undef')  { return undef; }
+                when ('base64') { return decode_base64($xml->textContent) }
+                default         { return $xml->textContent }
+            }
         }
         default {
             die 'invalid (unknown) element "'.$xml->toString.'"'
@@ -232,6 +249,16 @@ __END__
 =head1 AUTHOR
 
 Jozef Kutej, C<< <jkutej at cpan.org> >>
+
+=head1 CONTRIBUTORS
+ 
+The following people have contributed to the Sys::Path by commiting their
+code, sending patches, reporting bugs, asking questions, suggesting useful
+advices, nitpicking, chatting on IRC or commenting on my blog (in no particular
+order):
+
+    Lars Dɪᴇᴄᴋᴏᴡ 迪拉斯
+    Emmanuel Rodriguez
 
 =head1 BUGS
 
