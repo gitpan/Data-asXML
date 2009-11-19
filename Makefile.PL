@@ -9,6 +9,7 @@ WriteMakefile
                            'Class::Accessor::Fast' => 0,
                            'Encode' => 0,
                            'MIME::Base64' => 0,
+                           'Test::Deep::NoTest' => 0,
                            'Test::Differences' => 0,
                            'Test::Exception' => 0,
                            'Test::More' => 0,
